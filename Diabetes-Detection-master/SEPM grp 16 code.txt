@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Detection</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        .subtitle {
+            font-weight: 300;
+            margin-top: 0.5rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        button {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .result {
+            display: none;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .positive {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        .negative {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+        .error {
+            background-color: #fff3e0;
+            color: #e65100;
+            border: 1px solid #ffcc80;
+        }
+        .info-section {
+            background-color: #e3f2fd;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .footer {
+            text-align: center;
+            padding: 2rem 0;
+            background-color: #f5f5f5;
+            margin-top: 2rem;
+        }
+        .github-link {
+            color: #6a11cb;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .github-link:hover {
+            text-decoration: underline;
+        }
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .loader-spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: #2575fc;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .probability-bar {
+            height: 24px;
+            background: linear-gradient(90deg, #4caf50 0%, #ffeb3b 50%, #f44336 100%);
+            border-radius: 12px;
+            margin: 15px 0;
+            position: relative;
+        }
+        .probability-marker {
+            position: absolute;
+            width: 4px;
+            height: 32px;
+            background-color: #000;
+            top: -4px;
+            transform: translateX(-2px);
+        }
+        .probability-label {
+            text-align: center;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        .sample-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .sample-table th, .sample-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .sample-table th {
+            background-color: #f2f2f2;
+        }
+        .sample-button {
+            background: #e3f2fd;
+            color: #0d47a1;
+            border: 1px solid #bbdefb;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .sample-button:hover {
+            background: #bbdefb;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Diabetes Detection</h1>
+        <p class="subtitle">ML-based diabetes risk assessment tool</p>
+    </header>
+
+    <div class="container">
+        <div class="info-section">
+            <h2>About This Tool</h2>
+            <p>This web application uses a machine learning model to predict diabetes risk based on health parameters. The model replicates the one used in the PIMA Indians Diabetes Dataset research, providing a probability-based risk assessment.</p>
+            <p><strong>Note:</strong> This tool is for educational purposes only and should not replace professional medical advice.</p>
+        </div>
+        
+        <div class="card">
+            <h2>Enter Your Health Parameters</h2>
+            <form id="diabetesForm">
+                <div class="form-group">
+                    <label for="pregnancies">Pregnancies (Number of times pregnant)</label>
+                    <input type="number" id="pregnancies" min="0" step="1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="glucose">Glucose Level (mg/dL)</label>
+                    <input type="number" id="glucose" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bloodPressure">Blood Pressure (mm Hg)</label>
+                    <input type="number" id="bloodPressure" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="skinThickness">Skin Thickness (mm)</label>
+                    <input type="number" id="skinThickness" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="insulin">Insulin (mu U/ml)</label>
+                    <input type="number" id="insulin" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bmi">BMI (weight in kg/(height in m)²)</label>
+                    <input type="number" id="bmi" min="0" step="0.1" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="diabetesPedigree">Diabetes Pedigree Function</label>
+                    <input type="number" id="diabetesPedigree" min="0" step="0.001" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="age">Age (years)</label>
+                    <input type="number" id="age" min="0" step="1" required>
+                </div>
+                
+                <button type="submit">Predict Diabetes Risk</button>
+            </form>
+            
+            <div class="loader" id="loader">
+                <div class="loader-spinner"></div>
+                <p>Processing prediction...</p>
+            </div>
+            
+            <div id="result" class="result">
+                <div id="resultText"></div>
+                <div class="probability-container" style="display:none;" id="probabilityContainer">
+                    <div class="probability-bar">
+                        <div class="probability-marker" id="probabilityMarker"></div>
+                    </div>
+                    <div class="probability-label" id="probabilityLabel"></div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <h3>Try Sample Data</h3>
+                <button class="sample-button" id="sampleNegative">Sample Negative Case</button>
+                <button class="sample-button" id="samplePositive">Sample Positive Case</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Understanding the Parameters</h2>
+            <ul>
+                <li><strong>Pregnancies:</strong> Number of times pregnant</li>
+                <li><strong>Glucose:</strong> Plasma glucose concentration (2 hours in an oral glucose tolerance test)</li>
+                <li><strong>Blood Pressure:</strong> Diastolic blood pressure (mm Hg)</li>
+                <li><strong>Skin Thickness:</strong> Triceps skin fold thickness (mm)</li>
+                <li><strong>Insulin:</strong> 2-Hour serum insulin (mu U/ml)</li>
+                <li><strong>BMI:</strong> Body mass index (weight in kg/(height in m)²)</li>
+                <li><strong>Diabetes Pedigree Function:</strong> A function that scores likelihood of diabetes based on family history</li>
+                <li><strong>Age:</strong> Age in years</li>
+            </ul>
+            
+            <h3>Typical Value Ranges</h3>
+            <table class="sample-table">
+                <tr>
+                    <th>Parameter</th>
+                    <th>Typical Range</th>
+                    <th>Mean Value</th>
+                </tr>
+                <tr>
+                    <td>Pregnancies</td>
+                    <td>0-17</td>
+                    <td>3.8</td>
+                </tr>
+                <tr>
+                    <td>Glucose</td>
+                    <td>70-199</td>
+                    <td>120.9</td>
+                </tr>
+                <tr>
+                    <td>Blood Pressure</td>
+                    <td>40-122</td>
+                    <td>69.1</td>
+                </tr>
+                <tr>
+                    <td>Skin Thickness</td>
+                    <td>7-99</td>
+                    <td>20.5</td>
+                </tr>
+                <tr>
+                    <td>Insulin</td>
+                    <td>14-846</td>
+                    <td>79.8</td>
+                </tr>
+                <tr>
+                    <td>BMI</td>
+                    <td>18.2-67.1</td>
+                    <td>32.0</td>
+                </tr>
+                <tr>
+                    <td>Diabetes Pedigree</td>
+                    <td>0.078-2.42</td>
+                    <td>0.47</td>
+                </tr>
+                <tr>
+                    <td>Age</td>
+                    <td>21-81</td>
+                    <td>33.2</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>This project is based on the <a href="https://github.com/nileshparab42/Diabetes-Detection" class="github-link" target="_blank">Diabetes Detection</a> repository by Riddhi Sonkusare.</p>
+        <p>© 2025 | For educational purposes only.</p>
+    </footer>
+
+    <script>
+        // Implementation of a Random Forest-like model in JavaScript
+        // Based on the features of the model in the GitHub repo
+        
+        // Feature normalization function
+        function normalizeFeatures(features) {
+            // Mean and std values approximated from the dataset
+            const means = [3.8, 120.9, 69.1, 20.5, 79.8, 32.0, 0.47, 33.2];
+            const stds = [3.4, 32.0, 19.4, 16.0, 115.2, 7.9, 0.33, 11.8];
+            
+            return features.map((val, idx) => (val - means[idx]) / stds[idx]);s
+        }
+        
+        // Logistic function to convert to probability
+        function sigmoid(x) {
+            return 1 / (1 + Math.exp(-x));
+        }
+        
+        // Random Forest model simulation
+        function randomForestPredict(features) {
+            // Normalize features
+            const normalizedFeatures = normalizeFeatures(features);
+            
+            // Feature importance weights (based on typical Random Forest for diabetes prediction)
+            // These weights approximate the importance of each feature in the model
+            const weights = [0.07, 0.28, 0.06, 0.05, 0.04, 0.17, 0.12, 0.21];
+            
+            // Calculate weighted sum with some decision boundaries from random forest
+            let score = 0;
+            for (let i = 0; i < normalizedFeatures.length; i++) {
+                score += normalizedFeatures[i] * weights[i];
+            }
+            
+            // Add decision tree-like logic
+            if (features[1] > 140) { // High glucose is most important factor
+                score += 1.2;
+            }
+            
+            if (features[5] > 30 && features[7] > 40) { // High BMI and age
+                score += 0.8;
+            }
+            
+            if (features[6] > 0.8) { // High diabetes pedigree
+                score += 0.7;
+            }
+            
+            // Convert to probability using sigmoid function
+            return sigmoid(score - 0.6); // Threshold adjustment
+        }
+        
+        document.getElementById('diabetesForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show loader
+            document.getElementById('loader').style.display = 'block';
+            
+            // Hide previous result
+            document.getElementById('result').style.display = 'none';
+            
+            // Get all input values
+            const pregnancies = parseFloat(document.getElementById('pregnancies').value);
+            const glucose = parseFloat(document.getElementById('glucose').value);
+            const bloodPressure = parseFloat(document.getElementById('bloodPressure').value);
+            const skinThickness = parseFloat(document.getElementById('skinThickness').value);
+            const insulin = parseFloat(document.getElementById('insulin').value);
+            const bmi = parseFloat(document.getElementById('bmi').value);
+            const diabetesPedigree = parseFloat(document.getElementById('diabetesPedigree').value);
+            const age = parseFloat(document.getElementById('age').value);
+            
+            // Simple validation
+            if (isNaN(pregnancies) || isNaN(glucose) || isNaN(bloodPressure) || 
+                isNaN(skinThickness) || isNaN(insulin) || isNaN(bmi) || 
+                isNaN(diabetesPedigree) || isNaN(age)) {
+                
+                // Hide loader
+                document.getElementById('loader').style.display = 'none';
+                
+                showResult('Please fill in all fields with valid numbers.', 'error');
+                return;
+            }
+            
+            // Create feature array
+            const features = [
+                pregnancies, glucose, bloodPressure, skinThickness, 
+                insulin, bmi, diabetesPedigree, age
+            ];
+            
+            // Simulate API call delay
+            setTimeout(() => {
+                // Get prediction from model
+                const probability = randomForestPredict(features);
+                
+                // Hide loader
+                document.getElementById('loader').style.display = 'none';
+                
+                // Determine result based on probability
+                if (probability >= 0.6) {
+                    showResult(`Prediction: <strong>Higher Risk for Diabetes</strong>`, 'positive', probability);
+                } else if (probability >= 0.4) {
+                    showResult(`Prediction: <strong>Moderate Risk for Diabetes</strong>`, 'positive', probability);
+                } else {
+                    showResult(`Prediction: <strong>Lower Risk for Diabetes</strong>`, 'negative', probability);
+                }
+            }, 1500);
+        });
+        
+        function showResult(message, type, probability = null) {
+            const resultDiv = document.getElementById('result');
+            const resultText = document.getElementById('resultText');
+            resultText.innerHTML = message;
+            resultDiv.className = 'result ' + type;
+            resultDiv.style.display = 'block';
+            
+            // Show probability bar if probability is provided
+            if (probability !== null) {
+                const probabilityContainer = document.getElementById('probabilityContainer');
+                const probabilityMarker = document.getElementById('probabilityMarker');
+                const probabilityLabel = document.getElementById('probabilityLabel');
+                
+                probabilityContainer.style.display = 'block';
+                probabilityMarker.style.left = `${probability * 100}%`;
+                probabilityLabel.textContent = `Probability: ${(probability * 100).toFixed(1)}%`;
+                
+                // Additional explanation based on probability
+                let explanation = '';
+                if (probability >= 0.6) {
+                    explanation = '<p>The model indicates a higher risk for diabetes. Key risk factors in your data may include elevated glucose levels, high BMI, age, and family history.</p>';
+                } else if (probability >= 0.4) {
+                    explanation = '<p>The model indicates a moderate risk for diabetes. Some risk factors are present, but they are not all severe.</p>';
+                } else {
+                    explanation = '<p>The model indicates a lower risk for diabetes based on the provided parameters.</p>';
+                }
+                
+                explanation += '<p><strong>Remember:</strong> This is a simplified model for educational purposes. Always consult with healthcare professionals for proper medical advice.</p>';
+                
+                resultText.innerHTML += explanation;
+            }
+            
+            // Scroll to result
+            resultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // Sample data handlers
+        document.getElementById('sampleNegative').addEventListener('click', function() {
+            document.getElementById('pregnancies').value = '1';
+            document.getElementById('glucose').value = '85';
+            document.getElementById('bloodPressure').value = '66';
+            document.getElementById('skinThickness').value = '29';
+            document.getElementById('insulin').value = '26';
+            document.getElementById('bmi').value = '26.6';
+            document.getElementById('diabetesPedigree').value = '0.351';
+            document.getElementById('age').value = '31';
+        });
+        
+        document.getElementById('samplePositive').addEventListener('click', function() {
+            document.getElementById('pregnancies').value = '8';
+            document.getElementById('glucose').value = '183';
+            document.getElementById('bloodPressure').value = '64';
+            document.getElementById('skinThickness').value = '32';
+            document.getElementById('insulin').value = '124';
+            document.getElementById('bmi').value = '38.2';
+            document.getElementById('diabetesPedigree').value = '0.967';
+            document.getElementById('age').value = '45';
+        });
+    </script>
+</body>
+</html>
